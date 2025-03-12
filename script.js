@@ -21,10 +21,10 @@ window.onload = function() {
     // Computer player settings
     const computerPlayer = {
         active: false,
-        reactionTime: 30,  // ms delay in AI reaction (lower = faster responses)
-        accuracy: 0.9,     // 0-1, chance of moving correctly
-        lastUpdate: 0,     // timestamp of last decision
-        speedMultiplier: 1.5 // Makes the computer paddle move faster than human
+        reactionTime: 100,  // ms delay in AI reaction (higher = slower responses)
+        accuracy: 0.7,      // 0-1, chance of moving correctly (lower = makes more mistakes)
+        lastUpdate: 0,      // timestamp of last decision
+        speedMultiplier: 0.8 // Makes the computer paddle move slower than human
     };
     
     // List of emojis for the ball
@@ -228,9 +228,9 @@ easyBtn.addEventListener('click', function() {
     speedBoosted = false;
     
     // Set computer player settings for Easy
-    computerPlayer.reactionTime = 60; // Slower reaction, but still responsive
-    computerPlayer.accuracy = 0.7;    // Lower accuracy
-    computerPlayer.speedMultiplier = 1.2; // Slower movement
+    computerPlayer.reactionTime = 180; // Very slow reaction time
+    computerPlayer.accuracy = 0.5;     // Very low accuracy (50% chance of making mistakes)
+    computerPlayer.speedMultiplier = 0.6; // Very slow movement
     
     resetGame();
     render();
@@ -247,9 +247,9 @@ mediumBtn.addEventListener('click', function() {
     speedBoosted = false;
     
     // Set computer player settings for Medium
-    computerPlayer.reactionTime = 40; // Medium reaction
-    computerPlayer.accuracy = 0.85;   // Medium accuracy
-    computerPlayer.speedMultiplier = 1.5; // Medium movement speed
+    computerPlayer.reactionTime = 120; // Medium-slow reaction
+    computerPlayer.accuracy = 0.7;     // Medium-low accuracy
+    computerPlayer.speedMultiplier = 0.8; // Medium-slow movement speed
     
     resetGame();
     render();
@@ -266,9 +266,9 @@ hardBtn.addEventListener('click', function() {
     speedBoosted = false;
     
     // Set computer player settings for Hard
-    computerPlayer.reactionTime = 20;  // Fast reaction
-    computerPlayer.accuracy = 0.95;    // High accuracy
-    computerPlayer.speedMultiplier = 2.0; // Fast movement speed
+    computerPlayer.reactionTime = 80;  // Moderate reaction time
+    computerPlayer.accuracy = 0.85;    // Good accuracy but still makes mistakes
+    computerPlayer.speedMultiplier = 1.0; // Same speed as human player
     
     resetGame();
     render();
@@ -631,12 +631,24 @@ function moveComputerPlayer() {
         const timeToReachPaddle = (player2.x - closestBall.x) / closestBall.velocityX;
         predictedY = closestBall.y + (closestBall.velocityY * timeToReachPaddle);
         
-        // Adjust for possible wall bounces
-        while (predictedY < 0 || predictedY > canvas.height) {
-            if (predictedY < 0) {
-                predictedY = -predictedY; // Bounce off top wall
-            } else if (predictedY > canvas.height) {
-                predictedY = 2 * canvas.height - predictedY; // Bounce off bottom wall
+        // Reduce bounce prediction accuracy for easier difficulty
+        if (difficultyLevel < 3) {
+            // In Easy and Medium mode, the AI is worse at predicting bounces
+            if (predictedY < 0 || predictedY > canvas.height) {
+                // Just move toward the ball's current position instead of predicting bounces
+                predictedY = closestBall.y + (Math.random() - 0.5) * 50;
+            }
+        } else {
+            // Only in Hard mode does the AI predict bounces with some accuracy
+            while (predictedY < 0 || predictedY > canvas.height) {
+                if (predictedY < 0) {
+                    predictedY = -predictedY; // Bounce off top wall
+                } else if (predictedY > canvas.height) {
+                    predictedY = 2 * canvas.height - predictedY; // Bounce off bottom wall
+                }
+                
+                // Add some error to the prediction
+                predictedY += (Math.random() - 0.5) * 40;
             }
         }
     }
@@ -644,11 +656,22 @@ function moveComputerPlayer() {
     // Calculate ideal position for paddle center (aligned with predicted ball position)
     const idealPaddleY = predictedY - player2.height / 2;
     
-    // Add randomness based on accuracy setting
+    // Add more randomness and mistakes to AI positioning
     let moveToY = idealPaddleY;
+    
+    // Always add some imprecision, more when accuracy is lower
+    const randomOffset = (Math.random() - 0.5) * player2.height * (1.2 - computerPlayer.accuracy);
+    moveToY += randomOffset;
+    
+    // Occasionally make bigger mistakes
     if (Math.random() > computerPlayer.accuracy) {
-        // Occasionally make a mistake by aiming in the wrong direction or with wrong timing
-        moveToY = predictedY + (Math.random() - 0.5) * player2.height * 1.5;
+        // Make a significant mistake by moving in wrong direction
+        moveToY = predictedY + (Math.random() - 0.5) * player2.height * 2;
+    }
+    
+    // Sometimes get distracted and move toward center instead
+    if (Math.random() > computerPlayer.accuracy + 0.2) {
+        moveToY = canvas.height / 2 - player2.height / 2;
     }
     
     // Move the paddle toward the calculated position
