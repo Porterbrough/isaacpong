@@ -15,7 +15,7 @@ window.onload = function() {
     let gameMode = 1;
     
     // Difficulty level (1 = easy, 2 = medium, 3 = hard)
-    let difficultyLevel = 2;
+    let difficultyLevel = 1; // Default to easy
 
     // List of emojis for the ball
     const emojis = [
@@ -25,24 +25,38 @@ window.onload = function() {
     ];
     
     // Game objects
-    const ball = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-        radius: 40, // Start with a 40 pixel radius (80 pixel diameter)
-        velocityX: 5,
-        velocityY: 5,
-        speed: 7,
-        initialSpeed: {
-            onePlayer: 7,
-            twoPlayer: 4  // Slower initial speed for 2-player mode
-        },
-        color: 'white',
-        initialRadius: 40, // Store the initial radius
-        finalRadius: 20,   // The minimum radius after shrinking (20 pixels less than initial)
-        hitCount: 0,       // Track number of hits
-        maxHits: 20,       // Maximum number of hits for shrinking
-        trail: []          // Array to store previous positions for the trail
-    };
+    // Create an array to hold multiple balls
+    const balls = [];
+    
+    // Function to create a ball object
+    function createBall() {
+        return {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 40, // Start with a 40 pixel radius (80 pixel diameter)
+            velocityX: 5,
+            velocityY: 5,
+            speed: 7,
+            initialSpeed: {
+                onePlayer: 7,
+                twoPlayer: 4  // Slower initial speed for 2-player mode
+            },
+            color: 'white',
+            initialRadius: 40, // Store the initial radius
+            finalRadius: 20,   // The minimum radius after shrinking (20 pixels less than initial)
+            hitCount: 0,       // Track number of hits
+            maxHits: 20,       // Maximum number of hits for shrinking
+            trail: [],         // Array to store previous positions for the trail
+            emoji: null        // Each ball can have its own emoji
+        };
+    }
+    
+    // Create the first ball
+    balls.push(createBall());
+    
+    // For convenience, reference the first ball as 'ball' for now
+    // (We'll update the code to handle multiple balls later)
+    let ball = balls[0];
 
     const player1 = {
         x: 0,  // Back to the edge
@@ -152,7 +166,6 @@ easyBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 1;
-    // For now, all difficulty levels use the same settings
     resetGame();
     render();
 });
@@ -164,7 +177,6 @@ mediumBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 2;
-    // For now, all difficulty levels use the same settings
     resetGame();
     render();
 });
@@ -176,7 +188,6 @@ hardBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 3;
-    // For now, all difficulty levels use the same settings
     resetGame();
     render();
 });
@@ -255,15 +266,15 @@ function drawCircle(x, y, radius, color) {
     ctx.fill();
 }
 
-function drawEmoji(x, y, emoji) {
+function drawEmoji(x, y, emoji, radius) {
     if (!emoji) {
         console.error("No emoji provided to drawEmoji function");
         emoji = '😀'; // Fallback emoji
     }
     
-    // Scale the emoji size based on the ball radius
+    // Scale the emoji size based on the provided radius or default to a standard size
     // Use a larger font size to make the emoji more visible/clickable
-    const fontSize = Math.max(20, ball.radius * 1.5);
+    const fontSize = Math.max(20, radius * 1.5);
     ctx.font = `${fontSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -271,7 +282,7 @@ function drawEmoji(x, y, emoji) {
     ctx.fillText(emoji, x, y);
     
     // Uncomment this to debug the hitbox
-    // drawCircle(x, y, ball.radius * 0.6, 'rgba(255, 0, 0, 0.3)');
+    // drawCircle(x, y, radius * 0.6, 'rgba(255, 0, 0, 0.3)');
 }
 
 function drawNet() {
@@ -280,28 +291,39 @@ function drawNet() {
     }
 }
 
-function resetBall() {
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
+function resetBall(ballObj) {
+    ballObj.x = canvas.width / 2;
+    ballObj.y = canvas.height / 2;
     
-    // Set the appropriate speed based on game mode
+    // Set the appropriate base speed based on game mode
+    let baseSpeed;
     if (gameMode === 1) {
-        ball.speed = ball.initialSpeed.onePlayer;
+        baseSpeed = ballObj.initialSpeed.onePlayer;
     } else {
-        ball.speed = ball.initialSpeed.twoPlayer;
+        baseSpeed = ballObj.initialSpeed.twoPlayer;
     }
+    
+    // Apply difficulty modifier to speed
+    if (difficultyLevel === 3) { // Hard mode: 1.5x faster
+        baseSpeed *= 1.5;
+    }
+    
+    ballObj.speed = baseSpeed;
     
     // Give the ball a random initial direction with moderate velocity
     const direction = Math.random() > 0.5 ? 1 : -1;
-    ball.velocityX = direction * (ball.speed * 0.7);
+    ballObj.velocityX = direction * (ballObj.speed * 0.7);
     
     // Random but smaller vertical velocity
-    ball.velocityY = (Math.random() * 2 - 1) * (ball.speed * 0.3);
+    ballObj.velocityY = (Math.random() * 2 - 1) * (ballObj.speed * 0.3);
     
     // Clear the trail when resetting the ball
-    ball.trail = [];
+    ballObj.trail = [];
     
-    // Note: we no longer change the emoji here
+    // Assign a random emoji to the ball if it doesn't have one
+    if (!ballObj.emoji) {
+        ballObj.emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    }
 }
 
 function resetGame() {
@@ -314,12 +336,36 @@ function resetGame() {
     player1.y = (canvas.height - player1.height) / 2;
     player2.y = (canvas.height - player2.height) / 2;
     
-    // Reset ball to its initial large size
-    ball.radius = ball.initialRadius;
-    ball.hitCount = 0;
+    // Clear existing balls
+    balls.length = 0;
     
-    // Reset ball speed based on game mode
-    ball.speed = gameMode === 1 ? ball.initialSpeed.onePlayer : ball.initialSpeed.twoPlayer;
+    // Add balls based on difficulty
+    const ballCount = (difficultyLevel === 1) ? 1 : 2; // 1 ball for easy, 2 for medium/hard
+    
+    for (let i = 0; i < ballCount; i++) {
+        const newBall = createBall();
+        
+        // Give each ball a different emoji
+        let newEmoji;
+        do {
+            newEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+        } while (balls.some(b => b.emoji === newEmoji) && emojis.length > balls.length);
+        
+        newBall.emoji = newEmoji;
+        
+        // Apply the hard mode speed boost if needed
+        if (difficultyLevel === 3) {
+            newBall.initialSpeed.onePlayer *= 1.5;
+            newBall.initialSpeed.twoPlayer *= 1.5;
+        }
+        
+        resetBall(newBall);
+        balls.push(newBall);
+    }
+    
+    // Update our reference to the first ball for backward compatibility
+    ball = balls[0];
+    currentEmoji = ball.emoji;
     
     // Reset speed increase timer
     lastSpeedIncreaseTime = Date.now();
@@ -328,20 +374,7 @@ function resetGame() {
     gameOver = false;
     gameOverMessage = "";
     
-    resetBall();
     updateScore();
-    
-    // For the first game, keep the initial emoji
-    // For subsequent games (restarts), change to a new random emoji
-    if (gameRunning) {
-        // Get a new emoji that's different from the current one
-        let newEmoji;
-        do {
-            newEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-        } while (newEmoji === currentEmoji && emojis.length > 1);
-        
-        currentEmoji = newEmoji;
-    }
 }
 
 function updateScore() {
@@ -450,90 +483,59 @@ function movePlayers() {
     }
 }
 
-function update() {
-    if (!gameRunning) return;
-    
-    // Move the players
-    movePlayers();
-    
-    // Check if it's time to increase the ball speed (every 3 seconds)
-    const currentTime = Date.now();
-    if (currentTime - lastSpeedIncreaseTime > 3000) { // 3000ms = 3 seconds
-        // Increase ball speed based on game mode
-        if (gameMode === 1) {
-            // 1-player mode: Faster speed increases
-            ball.speed += 5;
-        } else {
-            // 2-player mode: More gradual speed increases
-            ball.speed += 2;
-        }
-        
-        // Update velocity based on the new speed while maintaining direction
-        if (ball.velocityX !== 0) {
-            const directionX = ball.velocityX > 0 ? 1 : -1;
-            const directionY = ball.velocityY > 0 ? 1 : -1;
-            const magnitude = Math.sqrt(ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY);
-            const ratio = ball.speed / magnitude;
-            
-            ball.velocityX = directionX * Math.abs(ball.velocityX) * ratio;
-            ball.velocityY = directionY * Math.abs(ball.velocityY) * ratio;
-        }
-        
-        lastSpeedIncreaseTime = currentTime;
-    }
-    
+function updateBall(ballObj) {
     // Add current position to the trail (less frequently for better spacing)
-    if (ball.trail.length === 0 || 
-        Math.abs(ball.x - ball.trail[ball.trail.length-1].x) > ball.radius * 0.3 || 
-        Math.abs(ball.y - ball.trail[ball.trail.length-1].y) > ball.radius * 0.3) {
-        ball.trail.push({x: ball.x, y: ball.y, age: 10}); // Age represents how long the trail point will last
+    if (ballObj.trail.length === 0 || 
+        Math.abs(ballObj.x - ballObj.trail[ballObj.trail.length-1].x) > ballObj.radius * 0.3 || 
+        Math.abs(ballObj.y - ballObj.trail[ballObj.trail.length-1].y) > ballObj.radius * 0.3) {
+        ballObj.trail.push({x: ballObj.x, y: ballObj.y, age: 10}); // Age represents how long the trail point will last
         
         // Limit trail length to avoid performance issues and keep trail reasonable
-        if (ball.trail.length > 8) {
-            ball.trail.shift(); // Remove oldest point
+        if (ballObj.trail.length > 8) {
+            ballObj.trail.shift(); // Remove oldest point
         }
     }
     
     // Update trail ages and remove old points
-    for (let i = ball.trail.length - 1; i >= 0; i--) {
-        ball.trail[i].age--;
-        if (ball.trail[i].age <= 0) {
-            ball.trail.splice(i, 1);
+    for (let i = ballObj.trail.length - 1; i >= 0; i--) {
+        ballObj.trail[i].age--;
+        if (ballObj.trail[i].age <= 0) {
+            ballObj.trail.splice(i, 1);
         }
     }
     
     // Move the ball
-    ball.x += ball.velocityX;
-    ball.y += ball.velocityY;
+    ballObj.x += ballObj.velocityX;
+    ballObj.y += ballObj.velocityY;
     
     // Wall collision (top and bottom)
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+    if (ballObj.y - ballObj.radius < 0 || ballObj.y + ballObj.radius > canvas.height) {
         // First, fix the ball position to prevent it from getting stuck in the wall
-        if (ball.y - ball.radius < 0) {
-            ball.y = ball.radius + 1;
-        } else if (ball.y + ball.radius > canvas.height) {
-            ball.y = canvas.height - ball.radius - 1;
+        if (ballObj.y - ballObj.radius < 0) {
+            ballObj.y = ballObj.radius + 1;
+        } else if (ballObj.y + ballObj.radius > canvas.height) {
+            ballObj.y = canvas.height - ballObj.radius - 1;
         }
         
         // Reverse vertical direction with increased random adjustment
-        ball.velocityY = -ball.velocityY;
+        ballObj.velocityY = -ballObj.velocityY;
         
         // Add a stronger random horizontal adjustment when hitting top/bottom walls
-        ball.velocityX += (Math.random() - 0.5) * 3;
+        ballObj.velocityX += (Math.random() - 0.5) * 3;
         
         // Ensure ball maintains significant horizontal movement
-        if (Math.abs(ball.velocityX) < ball.speed * 0.7) {
-            ball.velocityX = (ball.velocityX > 0 ? 1 : -1) * ball.speed * 0.7;
+        if (Math.abs(ballObj.velocityX) < ballObj.speed * 0.7) {
+            ballObj.velocityX = (ballObj.velocityX > 0 ? 1 : -1) * ballObj.speed * 0.7;
         }
     }
     
     // Player 1 paddle collision
-    if (collision(ball, player1)) {
+    if (collision(ballObj, player1)) {
         // First, fix the ball position to prevent it from getting stuck in the paddle
-        ball.x = player1.x + player1.width + ball.radius + 1;
+        ballObj.x = player1.x + player1.width + ballObj.radius + 1;
         
         // Where the ball hit the paddle
-        let collidePoint = ball.y - (player1.y + player1.height / 2);
+        let collidePoint = ballObj.y - (player1.y + player1.height / 2);
         
         // Normalize the value (-1 to 1)
         collidePoint = collidePoint / (player1.height / 2);
@@ -545,18 +547,18 @@ function update() {
         let direction = 1;
         
         // Ensure a minimum horizontal velocity to prevent infinite loops
-        const minHorizontalVelocity = ball.speed * 0.7;
+        const minHorizontalVelocity = ballObj.speed * 0.7;
         
         // Change velocity X and Y
-        ball.velocityX = Math.max(minHorizontalVelocity, direction * ball.speed * Math.cos(angleRad));
-        ball.velocityY = ball.speed * Math.sin(angleRad);
+        ballObj.velocityX = Math.max(minHorizontalVelocity, direction * ballObj.speed * Math.cos(angleRad));
+        ballObj.velocityY = ballObj.speed * Math.sin(angleRad);
         
         // Add more randomness to the angle to prevent repetitive patterns
-        ball.velocityY += (Math.random() - 0.5) * 3;
+        ballObj.velocityY += (Math.random() - 0.5) * 3;
         
         // Ensure the ball has some vertical movement
-        if (Math.abs(ball.velocityY) < 2) {
-            ball.velocityY = (Math.random() > 0.5 ? 2 : -2);
+        if (Math.abs(ballObj.velocityY) < 2) {
+            ballObj.velocityY = (Math.random() > 0.5 ? 2 : -2);
         }
         
         // Player 1 scores in 1-player mode only
@@ -565,9 +567,9 @@ function update() {
             updateScore();
             
             // Increment hit count and shrink the ball by 1 pixel each hit, up to 20 pixels total
-            if (ball.hitCount < ball.maxHits) {
-                ball.hitCount++;
-                ball.radius = ball.initialRadius - ball.hitCount;
+            if (ballObj.hitCount < ballObj.maxHits) {
+                ballObj.hitCount++;
+                ballObj.radius = ballObj.initialRadius - ballObj.hitCount;
             }
         }
     }
@@ -576,29 +578,29 @@ function update() {
     if (gameMode === 1) {
         // 1-player mode: Wall collision
         // Use a smaller effective radius for the wall collision too
-        if (ball.x + (ball.radius * 0.6) > wall.x) {
+        if (ballObj.x + (ballObj.radius * 0.6) > wall.x) {
             // Fix the ball position to prevent it from getting stuck in the wall
-            ball.x = wall.x - ball.radius - 1;
+            ballObj.x = wall.x - ballObj.radius - 1;
             
             // Ensure the ball bounces back with significant horizontal velocity
-            ball.velocityX = -Math.abs(ball.velocityX) * 1.1;
+            ballObj.velocityX = -Math.abs(ballObj.velocityX) * 1.1;
             
             // Add sufficient randomness to the bounce to prevent predictable patterns
-            ball.velocityY += (Math.random() - 0.5) * 4;
+            ballObj.velocityY += (Math.random() - 0.5) * 4;
             
             // Make sure the ball has some vertical movement
-            if (Math.abs(ball.velocityY) < 2) {
-                ball.velocityY = (Math.random() > 0.5 ? 2 : -2);
+            if (Math.abs(ballObj.velocityY) < 2) {
+                ballObj.velocityY = (Math.random() > 0.5 ? 2 : -2);
             }
         }
     } else {
         // 2-player mode: Player 2 paddle collision
-        if (collision(ball, player2)) {
+        if (collision(ballObj, player2)) {
             // Fix the ball position to prevent it from getting stuck in the paddle
-            ball.x = player2.x - ball.radius - 1;
+            ballObj.x = player2.x - ballObj.radius - 1;
             
             // Where the ball hit the paddle
-            let collidePoint = ball.y - (player2.y + player2.height / 2);
+            let collidePoint = ballObj.y - (player2.y + player2.height / 2);
             
             // Normalize the value (-1 to 1)
             collidePoint = collidePoint / (player2.height / 2);
@@ -610,69 +612,109 @@ function update() {
             let direction = -1;
             
             // Ensure a minimum horizontal velocity to prevent infinite loops
-            const minHorizontalVelocity = ball.speed * 0.7;
+            const minHorizontalVelocity = ballObj.speed * 0.7;
             
             // Change velocity X and Y
-            ball.velocityX = Math.min(-minHorizontalVelocity, direction * ball.speed * Math.cos(angleRad));
-            ball.velocityY = ball.speed * Math.sin(angleRad);
+            ballObj.velocityX = Math.min(-minHorizontalVelocity, direction * ballObj.speed * Math.cos(angleRad));
+            ballObj.velocityY = ballObj.speed * Math.sin(angleRad);
             
             // Add randomness to the angle to prevent repetitive patterns
-            ball.velocityY += (Math.random() - 0.5) * 3;
+            ballObj.velocityY += (Math.random() - 0.5) * 3;
             
             // Ensure the ball has some vertical movement
-            if (Math.abs(ball.velocityY) < 2) {
-                ball.velocityY = (Math.random() > 0.5 ? 2 : -2);
+            if (Math.abs(ballObj.velocityY) < 2) {
+                ballObj.velocityY = (Math.random() > 0.5 ? 2 : -2);
             }
         }
         
         // Player 2 scores when player 1 misses
-        if (ball.x - (ball.radius * 0.6) < 0) {
+        if (ballObj.x - (ballObj.radius * 0.6) < 0) {
             player2.score++;
             updateScore();
-            resetBall();
+            resetBall(ballObj);
         }
         
         // Player 1 scores when player 2 misses
-        if (ball.x + (ball.radius * 0.6) > canvas.width) {
+        if (ballObj.x + (ballObj.radius * 0.6) > canvas.width) {
             player1.score++;
             updateScore();
-            resetBall();
+            resetBall(ballObj);
             
             // Shrink the ball in 2-player mode as well
-            if (ball.hitCount < ball.maxHits) {
-                ball.hitCount++;
-                ball.radius = ball.initialRadius - ball.hitCount;
+            if (ballObj.hitCount < ballObj.maxHits) {
+                ballObj.hitCount++;
+                ballObj.radius = ballObj.initialRadius - ballObj.hitCount;
             }
         }
     }
     
     // Player 1 misses the ball in 1-player mode
-    if (gameMode === 1 && ball.x - (ball.radius * 0.6) < 0) {
+    if (gameMode === 1 && ballObj.x - (ballObj.radius * 0.6) < 0) {
         // Wall scores
         wall.score++;
         updateScore();
-        resetBall();
+        resetBall(ballObj);
     }
 }
 
-function render() {
-    // Clear canvas
-    drawRect(0, 0, canvas.width, canvas.height, '#000');
+function update() {
+    if (!gameRunning) return;
     
-    // Draw net (center line)
-    drawNet();
+    // Move the players
+    movePlayers();
     
+    // Check if it's time to increase the ball speed (every 3 seconds)
+    const currentTime = Date.now();
+    if (currentTime - lastSpeedIncreaseTime > 3000) { // 3000ms = 3 seconds
+        // Increase ball speed for all balls
+        for (let i = 0; i < balls.length; i++) {
+            const ballObj = balls[i];
+            
+            // Increase ball speed based on game mode and difficulty
+            let speedIncrease;
+            if (gameMode === 1) {
+                // 1-player mode: Faster speed increases
+                speedIncrease = difficultyLevel === 3 ? 7.5 : 5; // 1.5x for hard mode
+            } else {
+                // 2-player mode: More gradual speed increases
+                speedIncrease = difficultyLevel === 3 ? 3 : 2; // 1.5x for hard mode
+            }
+            
+            ballObj.speed += speedIncrease;
+            
+            // Update velocity based on the new speed while maintaining direction
+            if (ballObj.velocityX !== 0) {
+                const directionX = ballObj.velocityX > 0 ? 1 : -1;
+                const directionY = ballObj.velocityY > 0 ? 1 : -1;
+                const magnitude = Math.sqrt(ballObj.velocityX * ballObj.velocityX + ballObj.velocityY * ballObj.velocityY);
+                const ratio = ballObj.speed / magnitude;
+                
+                ballObj.velocityX = directionX * Math.abs(ballObj.velocityX) * ratio;
+                ballObj.velocityY = directionY * Math.abs(ballObj.velocityY) * ratio;
+            }
+        }
+        
+        lastSpeedIncreaseTime = currentTime;
+    }
+    
+    // Update each ball
+    for (let i = 0; i < balls.length; i++) {
+        updateBall(balls[i]);
+    }
+}
+
+function renderBall(ballObj) {
     // Draw trail of fading emojis
-    if (currentEmoji) { // Only draw if we have an emoji
-        for (let i = 0; i < ball.trail.length; i++) {
-            const point = ball.trail[i];
+    if (ballObj.emoji) { // Only draw if we have an emoji
+        for (let i = 0; i < ballObj.trail.length; i++) {
+            const point = ballObj.trail[i];
             const alpha = point.age / 10; // Fade based on age
             
             // Main emoji font size
-            const mainFontSize = ball.radius * 1.5;
+            const mainFontSize = ballObj.radius * 1.5;
             
             // Each trail emoji is just 2 pixels smaller than the one in front
-            const fontSize = mainFontSize - (2 * (ball.trail.length - i));
+            const fontSize = mainFontSize - (2 * (ballObj.trail.length - i));
             
             // Don't draw if too small
             if (fontSize < 15) continue;
@@ -684,10 +726,21 @@ function render() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = "white"; // Ensure we have a fill color
-            ctx.fillText(currentEmoji, point.x, point.y);
+            ctx.fillText(ballObj.emoji, point.x, point.y);
             ctx.restore(); // Restore previous context state
         }
     }
+    
+    // Draw ball (using emoji)
+    drawEmoji(ballObj.x, ballObj.y, ballObj.emoji, ballObj.radius);
+}
+
+function render() {
+    // Clear canvas
+    drawRect(0, 0, canvas.width, canvas.height, '#000');
+    
+    // Draw net (center line)
+    drawNet();
     
     // Draw player 1 paddle
     drawRect(player1.x, player1.y, player1.width, player1.height, player1.color);
@@ -701,8 +754,10 @@ function render() {
         drawRect(player2.x, player2.y, player2.width, player2.height, player2.color);
     }
     
-    // Draw ball (using emoji)
-    drawEmoji(ball.x, ball.y, currentEmoji);
+    // Draw all balls
+    for (let i = 0; i < balls.length; i++) {
+        renderBall(balls[i]);
+    }
     
     // If game is over, display the message
     if (gameOver) {
@@ -719,19 +774,13 @@ function gameLoop() {
     }
 }
 
-// Set initial emoji
-initialEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-currentEmoji = initialEmoji;
-
-// Make sure we have a valid emoji (debug step)
-if (!currentEmoji) {
-    currentEmoji = '😀'; // Fallback to a default emoji
-}
-
-// Debug logging
-console.log("Initial emoji set to:", currentEmoji);
+// Initialize game
+resetGame();
 
 // Initial render
 render();
+
+// Debug logging
+console.log("Game initialized with difficulty level:", difficultyLevel);
     
 }; // End of window.onload function
