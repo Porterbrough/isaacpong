@@ -5,11 +5,17 @@ window.onload = function() {
     const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('start-btn');
     const modeBtn = document.getElementById('mode-btn');
+    const easyBtn = document.getElementById('easy-btn');
+    const mediumBtn = document.getElementById('medium-btn');
+    const hardBtn = document.getElementById('hard-btn');
     const scoreDisplay = document.getElementById('score');
     const controlsText = document.getElementById('controls-text');
     
     // Game mode (1 = one player, 2 = two players)
     let gameMode = 1;
+    
+    // Difficulty level (1 = easy, 2 = medium, 3 = hard)
+    let difficultyLevel = 2;
 
     // List of emojis for the ball
     const emojis = [
@@ -135,6 +141,43 @@ modeBtn.addEventListener('click', function() {
     updateScore();
     
     // Render the game with the new mode
+    render();
+});
+
+// Difficulty button event listeners
+easyBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
+    }
+    
+    difficultyLevel = 1;
+    // For now, all difficulty levels use the same settings
+    resetGame();
+    render();
+});
+
+mediumBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
+    }
+    
+    difficultyLevel = 2;
+    // For now, all difficulty levels use the same settings
+    resetGame();
+    render();
+});
+
+hardBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
+    }
+    
+    difficultyLevel = 3;
+    // For now, all difficulty levels use the same settings
+    resetGame();
     render();
 });
 
