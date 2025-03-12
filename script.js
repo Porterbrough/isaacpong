@@ -681,8 +681,8 @@ function updateBall(ballObj) {
     
     // Player 1 misses the ball in 1-player mode
     if (gameMode === 1 && ballObj.x - (ballObj.radius * 0.6) < 0) {
-        // Wall scores
-        wall.score++;
+        // Wall scores 3 points every time it hits player's wall
+        wall.score += 3;
         updateScore();
         resetBall(ballObj);
         
