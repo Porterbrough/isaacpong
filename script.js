@@ -189,7 +189,7 @@ computerBtn.addEventListener('click', function() {
         gameMode = 2;
         modeBtn.textContent = 'Switch to 1-Player';
         computerBtn.textContent = 'Human Player';
-        controlsText.textContent = 'Player 1: W/S keys | Player 2: Computer AI';
+        controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
     } else {
         computerBtn.textContent = 'Computer Player';
         controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
@@ -549,6 +549,14 @@ function movePlayers() {
     if (computerPlayer.active && gameMode === 2) {
         // Computer player logic for player 2
         moveComputerPlayer();
+        
+        // In computer mode, allow arrow keys to also control player 1 (for convenience)
+        if (keysPressed['ArrowUp']) {
+            player1.y = Math.max(0, player1.y - player1.speed);
+        }
+        if (keysPressed['ArrowDown']) {
+            player1.y = Math.min(canvas.height - player1.height, player1.y + player1.speed);
+        }
     } else {
         // Arrow keys behavior depends on game mode
         if (gameMode === 1) {
