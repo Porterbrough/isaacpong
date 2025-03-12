@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Pong</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div id="score">0 : 0</div>
+        <canvas id="pong" width="600" height="400"></canvas>
+        <div class="instructions">
+            <p id="controls-text">Move paddle: W/S or Arrow keys</p>
+            <p>Score points by hitting the ball with your paddle</p>
+            <p>The ball shrinks as you score points, making it harder!</p>
+            <div class="buttons">
+                <button id="start-btn">Start Game</button>
+                <button id="mode-btn">Switch to 2-Player</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

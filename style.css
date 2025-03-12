@@ -1,0 +1,59 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #222;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#score {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+#pong {
+    background-color: #000;
+    border: 2px solid white;
+}
+
+.instructions {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+button {
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#start-btn {
+    background-color: #4CAF50;
+}
+
+#mode-btn {
+    background-color: #2196F3;
+}
