@@ -96,6 +96,8 @@ let initialEmoji = null; // Store the initial emoji shown before game starts
 let gameOver = false;
 let gameOverMessage = "";
 let lastSpeedIncreaseTime = 0; // Track when we last increased speed
+let consecutivePoints = 0; // Track consecutive points in Easy mode
+let speedBoosted = false; // Track if speed boost has been applied
 
 // Event listeners
 window.addEventListener('keydown', function(e) {
@@ -166,6 +168,8 @@ easyBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 1;
+    consecutivePoints = 0;
+    speedBoosted = false;
     resetGame();
     render();
 });
@@ -177,6 +181,8 @@ mediumBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 2;
+    consecutivePoints = 0;
+    speedBoosted = false;
     resetGame();
     render();
 });
@@ -188,6 +194,8 @@ hardBtn.addEventListener('click', function() {
     }
     
     difficultyLevel = 3;
+    consecutivePoints = 0;
+    speedBoosted = false;
     resetGame();
     render();
 });
@@ -369,6 +377,10 @@ function resetGame() {
     
     // Reset speed increase timer
     lastSpeedIncreaseTime = Date.now();
+    
+    // Reset consecutivePoints counter and speedBoosted flag
+    consecutivePoints = 0;
+    speedBoosted = false;
     
     // Reset game over state
     gameOver = false;
@@ -564,6 +576,25 @@ function updateBall(ballObj) {
         // Player 1 scores in 1-player mode only
         if (gameMode === 1) {
             player1.score++;
+            
+            // Track consecutive points in Easy mode
+            if (difficultyLevel === 1) {
+                consecutivePoints++;
+                
+                // Check if player reached 5 consecutive points and apply speed boost
+                if (consecutivePoints >= 5 && !speedBoosted) {
+                    // Apply 1.5x speed boost to all balls
+                    for (let i = 0; i < balls.length; i++) {
+                        balls[i].speed *= 1.5;
+                        // Update velocities proportionally
+                        balls[i].velocityX *= 1.5;
+                        balls[i].velocityY *= 1.5;
+                    }
+                    speedBoosted = true;
+                    // No visual message - silent speed increase
+                }
+            }
+            
             updateScore();
             
             // Increment hit count and shrink the ball by 1 pixel each hit, up to 20 pixels total
@@ -654,6 +685,12 @@ function updateBall(ballObj) {
         wall.score++;
         updateScore();
         resetBall(ballObj);
+        
+        // In Easy mode, reset consecutive points when player misses
+        if (difficultyLevel === 1) {
+            consecutivePoints = 0;
+            // Note: We don't reset the speed boost once it's applied
+        }
     }
 }
 
