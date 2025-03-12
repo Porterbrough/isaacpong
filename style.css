@@ -58,6 +58,10 @@ button {
     background-color: #2196F3;
 }
 
+#computer-btn {
+    background-color: #FF9800;
+}
+
 .difficulty-btn {
     background-color: #9C27B0;
 }

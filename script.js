@@ -5,18 +5,27 @@ window.onload = function() {
     const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('start-btn');
     const modeBtn = document.getElementById('mode-btn');
+    const computerBtn = document.getElementById('computer-btn');
     const easyBtn = document.getElementById('easy-btn');
     const mediumBtn = document.getElementById('medium-btn');
     const hardBtn = document.getElementById('hard-btn');
     const scoreDisplay = document.getElementById('score');
     const controlsText = document.getElementById('controls-text');
     
-    // Game mode (1 = one player, 2 = two players)
+    // Game mode (1 = one player, 2 = two players, 3 = computer player)
     let gameMode = 1;
     
     // Difficulty level (1 = easy, 2 = medium, 3 = hard)
     let difficultyLevel = 1; // Default to easy
-
+    
+    // Computer player settings
+    const computerPlayer = {
+        active: false,
+        reactionTime: 100, // ms delay in AI reaction (higher = easier for human)
+        accuracy: 0.85,    // 0-1, chance of moving correctly (lower = easier for human)
+        lastUpdate: 0      // timestamp of last decision
+    };
+    
     // List of emojis for the ball
     const emojis = [
         '😀', '😎', '🚀', '🔥', '⚽', '🏀', '🎾', '🌍', 
@@ -127,15 +136,20 @@ modeBtn.addEventListener('click', function() {
         return;
     }
     
-    // Toggle game mode
+    // Turn off computer player mode
+    computerPlayer.active = false;
+    
+    // Toggle between 1-player and 2-player modes
     gameMode = gameMode === 1 ? 2 : 1;
     
     // Update button text and instructions
     if (gameMode === 1) {
         modeBtn.textContent = 'Switch to 2-Player';
+        computerBtn.textContent = 'Computer Player';
         controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys';
     } else {
         modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Computer Player';
         controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
     }
     
@@ -160,6 +174,47 @@ modeBtn.addEventListener('click', function() {
     render();
 });
 
+// Computer player button event listener
+computerBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change mode during game
+        return;
+    }
+    
+    // Toggle computer mode
+    computerPlayer.active = !computerPlayer.active;
+    
+    // Always set to 2-player mode when computer player is active
+    if (computerPlayer.active) {
+        gameMode = 2;
+        modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Human Player';
+        controlsText.textContent = 'Player 1: W/S keys | Player 2: Computer AI';
+    } else {
+        computerBtn.textContent = 'Computer Player';
+        controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
+    }
+    
+    // Reset scores and positions
+    player1.score = 0;
+    player2.score = 0;
+    player1.y = (canvas.height - player1.height) / 2;
+    player2.y = (canvas.height - player2.height) / 2;
+    
+    // Reset ball position but don't start the game
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.radius = ball.initialRadius;
+    ball.hitCount = 0;
+    ball.speed = ball.initialSpeed.twoPlayer;
+    
+    // Update score display
+    updateScore();
+    
+    // Render the game with the new mode
+    render();
+});
+
 // Difficulty button event listeners
 easyBtn.addEventListener('click', function() {
     if (gameRunning) {
@@ -170,6 +225,11 @@ easyBtn.addEventListener('click', function() {
     difficultyLevel = 1;
     consecutivePoints = 0;
     speedBoosted = false;
+    
+    // Set computer player settings for Easy
+    computerPlayer.reactionTime = 180; // Slower reaction
+    computerPlayer.accuracy = 0.7;     // Lower accuracy
+    
     resetGame();
     render();
 });
@@ -183,6 +243,11 @@ mediumBtn.addEventListener('click', function() {
     difficultyLevel = 2;
     consecutivePoints = 0;
     speedBoosted = false;
+    
+    // Set computer player settings for Medium
+    computerPlayer.reactionTime = 120; // Medium reaction
+    computerPlayer.accuracy = 0.85;    // Medium accuracy
+    
     resetGame();
     render();
 });
@@ -196,6 +261,11 @@ hardBtn.addEventListener('click', function() {
     difficultyLevel = 3;
     consecutivePoints = 0;
     speedBoosted = false;
+    
+    // Set computer player settings for Hard
+    computerPlayer.reactionTime = 70;  // Fast reaction
+    computerPlayer.accuracy = 0.95;    // High accuracy
+    
     resetGame();
     render();
 });
@@ -475,24 +545,100 @@ function movePlayers() {
         player1.y = Math.min(canvas.height - player1.height, player1.y + player1.speed);
     }
     
-    // Arrow keys behavior depends on game mode
-    if (gameMode === 1) {
-        // In 1-player mode, arrow keys also control player 1 (for convenience)
-        if (keysPressed['ArrowUp']) {
-            player1.y = Math.max(0, player1.y - player1.speed);
-        }
-        if (keysPressed['ArrowDown']) {
-            player1.y = Math.min(canvas.height - player1.height, player1.y + player1.speed);
-        }
+    // Check if computer player is active
+    if (computerPlayer.active && gameMode === 2) {
+        // Computer player logic for player 2
+        moveComputerPlayer();
     } else {
-        // In 2-player mode, arrow keys control player 2
-        if (keysPressed['ArrowUp']) {
-            player2.y = Math.max(0, player2.y - player2.speed);
-        }
-        if (keysPressed['ArrowDown']) {
-            player2.y = Math.min(canvas.height - player2.height, player2.y + player2.speed);
+        // Arrow keys behavior depends on game mode
+        if (gameMode === 1) {
+            // In 1-player mode, arrow keys also control player 1 (for convenience)
+            if (keysPressed['ArrowUp']) {
+                player1.y = Math.max(0, player1.y - player1.speed);
+            }
+            if (keysPressed['ArrowDown']) {
+                player1.y = Math.min(canvas.height - player1.height, player1.y + player1.speed);
+            }
+        } else {
+            // In 2-player mode, arrow keys control player 2
+            if (keysPressed['ArrowUp']) {
+                player2.y = Math.max(0, player2.y - player2.speed);
+            }
+            if (keysPressed['ArrowDown']) {
+                player2.y = Math.min(canvas.height - player2.height, player2.y + player2.speed);
+            }
         }
     }
+}
+
+function moveComputerPlayer() {
+    // Don't update AI too frequently to make it more human-like
+    const currentTime = Date.now();
+    if (currentTime - computerPlayer.lastUpdate < computerPlayer.reactionTime) {
+        return;
+    }
+    
+    computerPlayer.lastUpdate = currentTime;
+    
+    // Find the ball that's closest to the player 2 paddle
+    let closestBall = null;
+    let shortestDistance = Infinity;
+    
+    for (let i = 0; i < balls.length; i++) {
+        const ballObj = balls[i];
+        // Only consider balls moving toward player 2 (positive velocityX)
+        if (ballObj.velocityX > 0) {
+            const distance = player2.x - ballObj.x;
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                closestBall = ballObj;
+            }
+        }
+    }
+    
+    // If no ball is moving toward player 2, move toward center
+    if (!closestBall) {
+        const centerY = canvas.height / 2;
+        if (player2.y + player2.height / 2 < centerY - player2.speed) {
+            player2.y += player2.speed / 2;
+        } else if (player2.y + player2.height / 2 > centerY + player2.speed) {
+            player2.y -= player2.speed / 2;
+        }
+        return;
+    }
+    
+    // Calculate ideal position for paddle center (aligned with ball's y position)
+    const idealPaddleY = closestBall.y - player2.height / 2;
+    
+    // Add randomness based on accuracy setting
+    let moveToY = idealPaddleY;
+    if (Math.random() > computerPlayer.accuracy) {
+        // Occasionally make a mistake by aiming in the wrong direction
+        moveToY = player2.y + (player2.y < idealPaddleY ? -player2.speed * 2 : player2.speed * 2);
+    }
+    
+    // Move the paddle toward the calculated position
+    const distanceToMove = moveToY - player2.y;
+    
+    // Adjust speed based on difficulty
+    let aiSpeed = player2.speed;
+    if (difficultyLevel === 1) {
+        // Slower in easy mode
+        aiSpeed *= 0.7;
+    } else if (difficultyLevel === 3) {
+        // Faster in hard mode
+        aiSpeed *= 1.2;
+    }
+    
+    // Move the paddle with some delay (for human-like behavior)
+    if (Math.abs(distanceToMove) > aiSpeed) {
+        player2.y += Math.sign(distanceToMove) * aiSpeed;
+    } else {
+        player2.y = moveToY;
+    }
+    
+    // Keep paddle within canvas boundaries
+    player2.y = Math.max(0, Math.min(canvas.height - player2.height, player2.y));
 }
 
 function updateBall(ballObj) {
