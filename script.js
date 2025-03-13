@@ -21,6 +21,7 @@ window.onload = function() {
     // Computer player settings
     const computerPlayer = {
         active: false,
+        difficultyLevel: 1, // 1 = easy, 2 = medium, 3 = hard
         reactionTime: 100,  // ms delay in AI reaction (higher = slower responses)
         accuracy: 0.7,      // 0-1, chance of moving correctly (lower = makes more mistakes)
         lastUpdate: 0,      // timestamp of last decision
@@ -182,18 +183,42 @@ computerBtn.addEventListener('click', function() {
         return;
     }
     
-    // Toggle computer mode
-    computerPlayer.active = !computerPlayer.active;
-    
-    // Always set to 2-player mode when computer player is active
-    if (computerPlayer.active) {
+    // If not in computer mode, activate it with Easy difficulty
+    if (!computerPlayer.active) {
+        computerPlayer.active = true;
+        computerPlayer.difficultyLevel = 1; // Easy
+        setComputerDifficulty(1);
+        
+        computerBtn.textContent = 'Computer: Easy';
+        
+        // Always set to 2-player mode when computer player is active
         gameMode = 2;
         modeBtn.textContent = 'Switch to 1-Player';
-        computerBtn.textContent = 'Human Player';
         controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
-    } else {
-        computerBtn.textContent = 'Computer Player';
-        controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
+    } 
+    // If already in computer mode, cycle through difficulties
+    else {
+        // Cycle difficulty: Easy -> Medium -> Hard -> Human
+        computerPlayer.difficultyLevel++;
+        
+        if (computerPlayer.difficultyLevel > 3) {
+            // Cycle back to human player
+            computerPlayer.active = false;
+            computerBtn.textContent = 'Computer: Easy';
+            controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
+        } else {
+            // Set appropriate computer difficulty
+            setComputerDifficulty(computerPlayer.difficultyLevel);
+            
+            // Update button text
+            if (computerPlayer.difficultyLevel === 1) {
+                computerBtn.textContent = 'Computer: Easy';
+            } else if (computerPlayer.difficultyLevel === 2) {
+                computerBtn.textContent = 'Computer: Medium';
+            } else if (computerPlayer.difficultyLevel === 3) {
+                computerBtn.textContent = 'Computer: Hard';
+            }
+        }
     }
     
     // Reset scores and positions
@@ -216,6 +241,27 @@ computerBtn.addEventListener('click', function() {
     render();
 });
 
+// Helper function to set computer difficulty parameters
+function setComputerDifficulty(level) {
+    switch (level) {
+        case 1: // Easy
+            computerPlayer.reactionTime = 180;
+            computerPlayer.accuracy = 0.5;
+            computerPlayer.speedMultiplier = 0.6;
+            break;
+        case 2: // Medium
+            computerPlayer.reactionTime = 80;
+            computerPlayer.accuracy = 0.75;
+            computerPlayer.speedMultiplier = 1.0;
+            break;
+        case 3: // Hard
+            computerPlayer.reactionTime = 40;
+            computerPlayer.accuracy = 0.9;
+            computerPlayer.speedMultiplier = 1.5;
+            break;
+    }
+}
+
 // Difficulty button event listeners
 easyBtn.addEventListener('click', function() {
     if (gameRunning) {
@@ -227,10 +273,8 @@ easyBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Set computer player settings for Easy
-    computerPlayer.reactionTime = 180; // Very slow reaction time
-    computerPlayer.accuracy = 0.5;     // Very low accuracy (50% chance of making mistakes)
-    computerPlayer.speedMultiplier = 0.6; // Very slow movement
+    // Note: We no longer change computer difficulty here
+    // Computer difficulty is now handled separately by the Computer button
     
     resetGame();
     render();
@@ -246,10 +290,8 @@ mediumBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Set computer player settings for Medium
-    computerPlayer.reactionTime = 120; // Medium-slow reaction
-    computerPlayer.accuracy = 0.7;     // Medium-low accuracy
-    computerPlayer.speedMultiplier = 0.8; // Medium-slow movement speed
+    // Note: We no longer change computer difficulty here
+    // Computer difficulty is now handled separately by the Computer button
     
     resetGame();
     render();
@@ -265,10 +307,8 @@ hardBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Set computer player settings for Hard
-    computerPlayer.reactionTime = 80;  // Moderate reaction time
-    computerPlayer.accuracy = 0.85;    // Good accuracy but still makes mistakes
-    computerPlayer.speedMultiplier = 1.0; // Same speed as human player
+    // Note: We no longer change computer difficulty here
+    // Computer difficulty is now handled separately by the Computer button
     
     resetGame();
     render();
@@ -631,15 +671,15 @@ function moveComputerPlayer() {
         const timeToReachPaddle = (player2.x - closestBall.x) / closestBall.velocityX;
         predictedY = closestBall.y + (closestBall.velocityY * timeToReachPaddle);
         
-        // Reduce bounce prediction accuracy for easier difficulty
-        if (difficultyLevel < 3) {
-            // In Easy and Medium mode, the AI is worse at predicting bounces
+        // Reduce bounce prediction accuracy based on computer difficulty level
+        if (computerPlayer.difficultyLevel < 3) {
+            // In Easy and Medium computer modes, the AI is worse at predicting bounces
             if (predictedY < 0 || predictedY > canvas.height) {
                 // Just move toward the ball's current position instead of predicting bounces
-                predictedY = closestBall.y + (Math.random() - 0.5) * 50;
+                predictedY = closestBall.y + (Math.random() - 0.5) * (computerPlayer.difficultyLevel === 1 ? 80 : 40);
             }
         } else {
-            // Only in Hard mode does the AI predict bounces with some accuracy
+            // Only in Hard computer mode does the AI predict bounces with some accuracy
             while (predictedY < 0 || predictedY > canvas.height) {
                 if (predictedY < 0) {
                     predictedY = -predictedY; // Bounce off top wall
@@ -648,7 +688,7 @@ function moveComputerPlayer() {
                 }
                 
                 // Add some error to the prediction
-                predictedY += (Math.random() - 0.5) * 40;
+                predictedY += (Math.random() - 0.5) * 25;
             }
         }
     }
@@ -677,17 +717,8 @@ function moveComputerPlayer() {
     // Move the paddle toward the calculated position
     const distanceToMove = moveToY - player2.y;
     
-    // Apply computer speed multiplier
+    // Apply computer speed multiplier based on computer difficulty
     let aiSpeed = player2.speed * computerPlayer.speedMultiplier;
-    
-    // Additional difficulty-based adjustments
-    if (difficultyLevel === 1) {
-        // Still a bit slower in easy mode
-        aiSpeed *= 0.9;
-    } else if (difficultyLevel === 3) {
-        // Even faster in hard mode
-        aiSpeed *= 1.2;
-    }
     
     // Move the paddle with some delay (for human-like behavior)
     if (Math.abs(distanceToMove) > aiSpeed) {
