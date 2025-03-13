@@ -6,6 +6,7 @@ window.onload = function() {
     const startBtn = document.getElementById('start-btn');
     const modeBtn = document.getElementById('mode-btn');
     const computerBtn = document.getElementById('computer-btn');
+    const pauseBtn = document.getElementById('pause-btn');
     
     // Game difficulty buttons
     const gameEasyBtn = document.getElementById('game-easy-btn');
@@ -109,6 +110,7 @@ window.onload = function() {
 
 // Game variables
 let gameRunning = false;
+let gamePaused = false;
 let keysPressed = {};
 let currentEmoji = null; // Will be set when the game loads
 let initialEmoji = null; // Store the initial emoji shown before game starts
@@ -121,6 +123,12 @@ let speedBoosted = false; // Track if speed boost has been applied
 // Event listeners
 window.addEventListener('keydown', function(e) {
     keysPressed[e.key] = true;
+    
+    // Handle pause key (Escape or 'p')
+    if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && gameRunning) {
+        // Simulate a click on the pause button
+        pauseBtn.click();
+    }
 });
 
 window.addEventListener('keyup', function(e) {
@@ -131,12 +139,18 @@ startBtn.addEventListener('click', function() {
     if (!gameRunning) {
         resetGame();
         gameRunning = true;
+        gamePaused = false; // Make sure game isn't paused
+        pauseBtn.textContent = '⏸️ Pause';
+        pauseBtn.classList.remove('resume');
         startBtn.textContent = 'Restart Game';
         // Initialize the speed increase timer when the game starts
         lastSpeedIncreaseTime = Date.now();
         gameLoop();
     } else {
         resetGame();
+        gamePaused = false; // Make sure game isn't paused when restarting
+        pauseBtn.textContent = '⏸️ Pause';
+        pauseBtn.classList.remove('resume');
     }
 });
 
@@ -389,6 +403,39 @@ compHardBtn.addEventListener('click', function() {
     render();
 });
 
+// Pause button event listener
+pauseBtn.addEventListener('click', function() {
+    if (!gameRunning) {
+        // Can't pause if game isn't running
+        return;
+    }
+    
+    // Toggle pause state
+    gamePaused = !gamePaused;
+    
+    // Update button text based on pause state
+    if (gamePaused) {
+        pauseBtn.textContent = '▶️ Resume';
+        pauseBtn.classList.add('resume');
+        
+        // Display "PAUSED" overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.font = '48px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+    } else {
+        pauseBtn.textContent = '⏸️ Pause';
+        pauseBtn.classList.remove('resume');
+        
+        // Resume the game
+        lastSpeedIncreaseTime = Date.now(); // Reset speed increase timer
+    }
+});
+
 // Game functions
 function drawRect(x, y, width, height, color) {
     ctx.fillStyle = color;
@@ -589,11 +636,19 @@ function updateScore() {
             gameOver = true;
             gameOverMessage = "YOU WIN";
             startBtn.textContent = 'Play Again';
+            // Reset pause button
+            gamePaused = false;
+            pauseBtn.textContent = '⏸️ Pause';
+            pauseBtn.classList.remove('resume');
         } else if (wall.score >= 20) {
             gameRunning = false;
             gameOver = true;
             gameOverMessage = "YOU LOSE";
             startBtn.textContent = 'Play Again';
+            // Reset pause button
+            gamePaused = false;
+            pauseBtn.textContent = '⏸️ Pause';
+            pauseBtn.classList.remove('resume');
         }
     } else {
         // 2-player mode
@@ -605,11 +660,19 @@ function updateScore() {
             gameOver = true;
             gameOverMessage = "PLAYER 1 WINS";
             startBtn.textContent = 'Play Again';
+            // Reset pause button
+            gamePaused = false;
+            pauseBtn.textContent = '⏸️ Pause';
+            pauseBtn.classList.remove('resume');
         } else if (player2.score >= 20) {
             gameRunning = false;
             gameOver = true;
             gameOverMessage = "PLAYER 2 WINS";
             startBtn.textContent = 'Play Again';
+            // Reset pause button
+            gamePaused = false;
+            pauseBtn.textContent = '⏸️ Pause';
+            pauseBtn.classList.remove('resume');
         }
     }
 }
@@ -1111,11 +1174,26 @@ function render() {
     if (gameOver) {
         displayGameOver(gameOverMessage);
     }
+    
+    // If game is paused, show the pause overlay
+    if (gamePaused && gameRunning) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.font = '48px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+    }
 }
 
 function gameLoop() {
-    update();
-    render();
+    if (gameRunning && !gamePaused) {
+        update();
+    }
+    
+    render(); // Always render, even when paused
     
     if (gameRunning) {
         requestAnimationFrame(gameLoop);
