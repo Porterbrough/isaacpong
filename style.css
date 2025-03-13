@@ -28,7 +28,13 @@ body {
     font-size: 32px;
 }
 
-.pause-button {
+.game-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pause-button, .exit-button {
     background-color: #333;
     color: white;
     border: 2px solid #555;
@@ -39,7 +45,7 @@ body {
     transition: all 0.2s;
 }
 
-.pause-button:hover {
+.pause-button:hover, .exit-button:hover {
     background-color: #555;
 }
 
@@ -49,6 +55,15 @@ body {
 
 .pause-button.resume:hover {
     background-color: #3d8c40;
+}
+
+.exit-button {
+    background-color: #d32f2f;
+    border-color: #b71c1c;
+}
+
+.exit-button:hover {
+    background-color: #f44336;
 }
 
 #pong {

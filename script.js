@@ -7,6 +7,7 @@ window.onload = function() {
     const modeBtn = document.getElementById('mode-btn');
     const computerBtn = document.getElementById('computer-btn');
     const pauseBtn = document.getElementById('pause-btn');
+    const exitBtn = document.getElementById('exit-btn');
     
     // Game difficulty buttons
     const gameEasyBtn = document.getElementById('game-easy-btn');
@@ -124,10 +125,16 @@ let speedBoosted = false; // Track if speed boost has been applied
 window.addEventListener('keydown', function(e) {
     keysPressed[e.key] = true;
     
-    // Handle pause key (Escape or 'p')
-    if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && gameRunning) {
+    // Handle pause key (Space or 'p')
+    if ((e.key === ' ' || e.key === 'p' || e.key === 'P') && gameRunning) {
         // Simulate a click on the pause button
         pauseBtn.click();
+    }
+    
+    // Handle exit key (Escape)
+    if (e.key === 'Escape') {
+        // Simulate a click on the exit button
+        exitBtn.click();
     }
 });
 
@@ -434,6 +441,42 @@ pauseBtn.addEventListener('click', function() {
         // Resume the game
         lastSpeedIncreaseTime = Date.now(); // Reset speed increase timer
     }
+});
+
+// Exit button event listener
+exitBtn.addEventListener('click', function() {
+    // Show exit confirmation dialog
+    if (gameRunning && !confirm('Are you sure you want to exit the game? Your progress will be lost.')) {
+        return; // User cancelled the exit
+    }
+    
+    // Stop the game
+    gameRunning = false;
+    gamePaused = false;
+    
+    // Reset buttons
+    pauseBtn.textContent = '⏸️ Pause';
+    pauseBtn.classList.remove('resume');
+    startBtn.textContent = 'Start Game';
+    
+    // Reset scores and game objects
+    resetGame();
+    
+    // Show exit message
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.font = '48px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('GAME EXITED', canvas.width / 2, canvas.height / 2);
+    
+    ctx.font = '20px Arial';
+    ctx.fillText('Click "Start Game" to play again', canvas.width / 2, canvas.height / 2 + 50);
+    
+    // Render once to show the exit message
+    render();
 });
 
 // Game functions
