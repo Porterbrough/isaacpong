@@ -183,42 +183,31 @@ computerBtn.addEventListener('click', function() {
         return;
     }
     
-    // If not in computer mode, activate it with Easy difficulty
-    if (!computerPlayer.active) {
-        computerPlayer.active = true;
-        computerPlayer.difficultyLevel = 1; // Easy
-        setComputerDifficulty(1);
+    // Toggle between computer player and human player
+    computerPlayer.active = !computerPlayer.active;
+    
+    if (computerPlayer.active) {
+        // Set computer difficulty to match game difficulty
+        computerPlayer.difficultyLevel = difficultyLevel;
+        setComputerDifficulty(difficultyLevel);
         
-        computerBtn.textContent = 'Computer: Easy';
+        // Update button text based on current game difficulty
+        if (difficultyLevel === 1) {
+            computerBtn.textContent = 'Computer: Easy';
+        } else if (difficultyLevel === 2) {
+            computerBtn.textContent = 'Computer: Medium';
+        } else {
+            computerBtn.textContent = 'Computer: Hard';
+        }
         
         // Always set to 2-player mode when computer player is active
         gameMode = 2;
         modeBtn.textContent = 'Switch to 1-Player';
         controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
-    } 
-    // If already in computer mode, cycle through difficulties
-    else {
-        // Cycle difficulty: Easy -> Medium -> Hard -> Human
-        computerPlayer.difficultyLevel++;
-        
-        if (computerPlayer.difficultyLevel > 3) {
-            // Cycle back to human player
-            computerPlayer.active = false;
-            computerBtn.textContent = 'Computer: Easy';
-            controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
-        } else {
-            // Set appropriate computer difficulty
-            setComputerDifficulty(computerPlayer.difficultyLevel);
-            
-            // Update button text
-            if (computerPlayer.difficultyLevel === 1) {
-                computerBtn.textContent = 'Computer: Easy';
-            } else if (computerPlayer.difficultyLevel === 2) {
-                computerBtn.textContent = 'Computer: Medium';
-            } else if (computerPlayer.difficultyLevel === 3) {
-                computerBtn.textContent = 'Computer: Hard';
-            }
-        }
+    } else {
+        // Switch back to human player
+        computerBtn.textContent = 'Computer Player';
+        controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
     }
     
     // Reset scores and positions
@@ -273,8 +262,12 @@ easyBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Note: We no longer change computer difficulty here
-    // Computer difficulty is now handled separately by the Computer button
+    // Update computer difficulty to match game difficulty if computer is active
+    if (computerPlayer.active) {
+        computerPlayer.difficultyLevel = 1; // Easy
+        setComputerDifficulty(1);
+        computerBtn.textContent = 'Computer: Easy';
+    }
     
     resetGame();
     render();
@@ -290,8 +283,12 @@ mediumBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Note: We no longer change computer difficulty here
-    // Computer difficulty is now handled separately by the Computer button
+    // Update computer difficulty to match game difficulty if computer is active
+    if (computerPlayer.active) {
+        computerPlayer.difficultyLevel = 2; // Medium
+        setComputerDifficulty(2);
+        computerBtn.textContent = 'Computer: Medium';
+    }
     
     resetGame();
     render();
@@ -307,8 +304,12 @@ hardBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Note: We no longer change computer difficulty here
-    // Computer difficulty is now handled separately by the Computer button
+    // Update computer difficulty to match game difficulty if computer is active
+    if (computerPlayer.active) {
+        computerPlayer.difficultyLevel = 3; // Hard
+        setComputerDifficulty(3);
+        computerBtn.textContent = 'Computer: Hard';
+    }
     
     resetGame();
     render();
