@@ -66,14 +66,27 @@ button {
     background-color: #9C27B0;
 }
 
-#easy-btn {
+#game-easy-btn, #comp-easy-btn {
     background-color: #66BB6A;
 }
 
-#medium-btn {
+#game-medium-btn, #comp-medium-btn {
     background-color: #FFA726;
 }
 
-#hard-btn {
+#game-hard-btn, #comp-hard-btn {
     background-color: #EF5350;
+}
+
+.computer-difficulty {
+    margin-top: 5px;
+}
+
+.comp-difficulty-btn {
+    opacity: 0.6;
+}
+
+.comp-difficulty-btn.active {
+    opacity: 1;
+    box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.5);
 }

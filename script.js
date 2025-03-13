@@ -6,9 +6,17 @@ window.onload = function() {
     const startBtn = document.getElementById('start-btn');
     const modeBtn = document.getElementById('mode-btn');
     const computerBtn = document.getElementById('computer-btn');
-    const easyBtn = document.getElementById('easy-btn');
-    const mediumBtn = document.getElementById('medium-btn');
-    const hardBtn = document.getElementById('hard-btn');
+    
+    // Game difficulty buttons
+    const gameEasyBtn = document.getElementById('game-easy-btn');
+    const gameMediumBtn = document.getElementById('game-medium-btn');
+    const gameHardBtn = document.getElementById('game-hard-btn');
+    
+    // Computer difficulty buttons
+    const compEasyBtn = document.getElementById('comp-easy-btn');
+    const compMediumBtn = document.getElementById('comp-medium-btn');
+    const compHardBtn = document.getElementById('comp-hard-btn');
+    
     const scoreDisplay = document.getElementById('score');
     const controlsText = document.getElementById('controls-text');
     
@@ -187,27 +195,23 @@ computerBtn.addEventListener('click', function() {
     computerPlayer.active = !computerPlayer.active;
     
     if (computerPlayer.active) {
-        // Set computer difficulty to match game difficulty
-        computerPlayer.difficultyLevel = difficultyLevel;
-        setComputerDifficulty(difficultyLevel);
-        
-        // Update button text based on current game difficulty
-        if (difficultyLevel === 1) {
-            computerBtn.textContent = 'Computer: Easy';
-        } else if (difficultyLevel === 2) {
-            computerBtn.textContent = 'Computer: Medium';
-        } else {
-            computerBtn.textContent = 'Computer: Hard';
-        }
-        
         // Always set to 2-player mode when computer player is active
         gameMode = 2;
         modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Human Player';
         controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
+        
+        // Highlight the currently active computer difficulty button
+        updateComputerDifficultyButtons();
     } else {
         // Switch back to human player
         computerBtn.textContent = 'Computer Player';
         controlsText.textContent = 'Player 1: W/S keys | Player 2: Arrow Up/Down keys';
+        
+        // Remove highlighting from all computer difficulty buttons
+        compEasyBtn.classList.remove('active');
+        compMediumBtn.classList.remove('active');
+        compHardBtn.classList.remove('active');
     }
     
     // Reset scores and positions
@@ -232,6 +236,8 @@ computerBtn.addEventListener('click', function() {
 
 // Helper function to set computer difficulty parameters
 function setComputerDifficulty(level) {
+    computerPlayer.difficultyLevel = level;
+    
     switch (level) {
         case 1: // Easy
             computerPlayer.reactionTime = 180;
@@ -249,10 +255,32 @@ function setComputerDifficulty(level) {
             computerPlayer.speedMultiplier = 1.5;
             break;
     }
+    
+    // Update the difficulty button highlights
+    updateComputerDifficultyButtons();
 }
 
-// Difficulty button event listeners
-easyBtn.addEventListener('click', function() {
+// Helper function to update the computer difficulty button highlighting
+function updateComputerDifficultyButtons() {
+    if (!computerPlayer.active) return;
+    
+    // Remove active class from all buttons
+    compEasyBtn.classList.remove('active');
+    compMediumBtn.classList.remove('active');
+    compHardBtn.classList.remove('active');
+    
+    // Add active class to the current difficulty button
+    if (computerPlayer.difficultyLevel === 1) {
+        compEasyBtn.classList.add('active');
+    } else if (computerPlayer.difficultyLevel === 2) {
+        compMediumBtn.classList.add('active');
+    } else {
+        compHardBtn.classList.add('active');
+    }
+}
+
+// Game difficulty button event listeners
+gameEasyBtn.addEventListener('click', function() {
     if (gameRunning) {
         // Can't change difficulty during game
         return;
@@ -262,18 +290,11 @@ easyBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Update computer difficulty to match game difficulty if computer is active
-    if (computerPlayer.active) {
-        computerPlayer.difficultyLevel = 1; // Easy
-        setComputerDifficulty(1);
-        computerBtn.textContent = 'Computer: Easy';
-    }
-    
     resetGame();
     render();
 });
 
-mediumBtn.addEventListener('click', function() {
+gameMediumBtn.addEventListener('click', function() {
     if (gameRunning) {
         // Can't change difficulty during game
         return;
@@ -283,18 +304,11 @@ mediumBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Update computer difficulty to match game difficulty if computer is active
-    if (computerPlayer.active) {
-        computerPlayer.difficultyLevel = 2; // Medium
-        setComputerDifficulty(2);
-        computerBtn.textContent = 'Computer: Medium';
-    }
-    
     resetGame();
     render();
 });
 
-hardBtn.addEventListener('click', function() {
+gameHardBtn.addEventListener('click', function() {
     if (gameRunning) {
         // Can't change difficulty during game
         return;
@@ -304,14 +318,74 @@ hardBtn.addEventListener('click', function() {
     consecutivePoints = 0;
     speedBoosted = false;
     
-    // Update computer difficulty to match game difficulty if computer is active
-    if (computerPlayer.active) {
-        computerPlayer.difficultyLevel = 3; // Hard
-        setComputerDifficulty(3);
-        computerBtn.textContent = 'Computer: Hard';
+    resetGame();
+    render();
+});
+
+// Computer difficulty button event listeners
+compEasyBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
     }
     
-    resetGame();
+    // Set computer difficulty to easy
+    setComputerDifficulty(1);
+    
+    // If computer wasn't active, activate it
+    if (!computerPlayer.active) {
+        computerPlayer.active = true;
+        gameMode = 2;
+        modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Human Player';
+        controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
+        resetGame();
+    }
+    
+    render();
+});
+
+compMediumBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
+    }
+    
+    // Set computer difficulty to medium
+    setComputerDifficulty(2);
+    
+    // If computer wasn't active, activate it
+    if (!computerPlayer.active) {
+        computerPlayer.active = true;
+        gameMode = 2;
+        modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Human Player';
+        controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
+        resetGame();
+    }
+    
+    render();
+});
+
+compHardBtn.addEventListener('click', function() {
+    if (gameRunning) {
+        // Can't change difficulty during game
+        return;
+    }
+    
+    // Set computer difficulty to hard
+    setComputerDifficulty(3);
+    
+    // If computer wasn't active, activate it
+    if (!computerPlayer.active) {
+        computerPlayer.active = true;
+        gameMode = 2;
+        modeBtn.textContent = 'Switch to 1-Player';
+        computerBtn.textContent = 'Human Player';
+        controlsText.textContent = 'Move paddle: W/S keys or Arrow Up/Down keys | Player 2: Computer AI';
+        resetGame();
+    }
+    
     render();
 });
 
@@ -1050,6 +1124,14 @@ function gameLoop() {
 
 // Initialize game
 resetGame();
+
+// Set default computer difficulty to match game difficulty
+setComputerDifficulty(1);
+
+// Hide computer difficulty buttons initially (they'll show when computer mode is active)
+compEasyBtn.classList.remove('active');
+compMediumBtn.classList.remove('active');
+compHardBtn.classList.remove('active');
 
 // Initial render
 render();
