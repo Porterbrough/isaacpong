@@ -66,6 +66,30 @@ body {
     background-color: #f44336;
 }
 
+.bottom-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.leave-site-button {
+    background-color: #9C27B0;
+    color: white;
+    border: 2px solid #7B1FA2;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.leave-site-button:hover {
+    background-color: #8E24AA;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
 #pong {
     background-color: #000;
     border: 2px solid white;

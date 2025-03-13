@@ -8,6 +8,7 @@ window.onload = function() {
     const computerBtn = document.getElementById('computer-btn');
     const pauseBtn = document.getElementById('pause-btn');
     const exitBtn = document.getElementById('exit-btn');
+    const leaveSiteBtn = document.getElementById('leave-site-btn');
     
     // Game difficulty buttons
     const gameEasyBtn = document.getElementById('game-easy-btn');
@@ -499,6 +500,15 @@ exitBtn.addEventListener('click', function() {
     
     // Render once to show the exit message
     render();
+});
+
+// Leave Site button event listener
+leaveSiteBtn.addEventListener('click', function() {
+    // Ask for confirmation before leaving
+    if (confirm("Are you sure you want to leave the site?")) {
+        // Redirect to Google as a safe default destination
+        window.location.href = "https://www.google.com";
+    }
 });
 
 // Game functions
