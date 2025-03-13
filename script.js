@@ -504,11 +504,8 @@ exitBtn.addEventListener('click', function() {
 
 // Leave Site button event listener
 leaveSiteBtn.addEventListener('click', function() {
-    // Ask for confirmation before leaving
-    if (confirm("Are you sure you want to leave the site?")) {
-        // Redirect to Google as a safe default destination
-        window.location.href = "https://www.google.com";
-    }
+    // Go back to previous page (Safari) without confirmation
+    window.history.back();
 });
 
 // Game functions
